@@ -106,8 +106,8 @@ footer{text-align:center;padding:20px;font-size:.75rem;color:#9aaabb;border-top:
     <div class="sec-title">📐 Dimensionet e Strukturës</div>
     <div class="frow">
       <div class="field"><label>Gjerësia L_g (m)</label>
-        <input type="number" id="width" value="6.0" min="1" max="12" step="0.1">
-        <div class="hint">Nga muri → skaji i lirë. Max tipik 6 m</div>
+        <input type="number" id="width" value="8.0" min="1" max="16" step="0.1">
+        <div class="hint">Hapësira totale e mbuluar (gjerësia). Tipik 6–10 m</div>
       </div>
       <div class="field"><label>Gjatësia L_t (m)</label>
         <input type="number" id="length" value="5.0" min="1" max="30" step="0.1">
@@ -116,11 +116,11 @@ footer{text-align:center;padding:20px;font-size:.75rem;color:#9aaabb;border-top:
     </div>
     <div class="frow">
       <div class="field"><label>Lartësia H (m)</label>
-        <input type="number" id="height" value="3.0" min="1" max="6" step="0.05">
+        <input type="number" id="height" value="5.0" min="1" max="8" step="0.05">
         <div class="hint">Lartësia e kolonës (nga toka → trari)</div>
       </div>
       <div class="field"><label>Pjerrësia α (°)</label>
-        <input type="number" id="slope" value="5" min="0" max="45" step="0.5">
+        <input type="number" id="slope" value="15" min="0" max="45" step="0.5">
         <div class="hint">Pjerrësia e çatisë (0°=e rrafshët)</div>
       </div>
     </div>
@@ -205,7 +205,8 @@ footer{text-align:center;padding:20px;font-size:.75rem;color:#9aaabb;border-top:
       <div class="frow">
         <div class="field"><label>Konfigurimi</label>
           <select id="colConfig">
-            <option value="leanTo" selected>Anë e Murit + Kolona (Lean-to)</option>
+            <option value="cantilever" selected>Konzolë — një rresht (kantilever, si fotot)</option>
+            <option value="leanTo">Anë e Murit + Kolona (Lean-to)</option>
             <option value="free">Të Dyja Anët të Lira (Freestanding)</option>
           </select>
         </div>
@@ -237,11 +238,12 @@ footer{text-align:center;padding:20px;font-size:.75rem;color:#9aaabb;border-top:
 
       <div class="field" style="background:#f0f6ff;border:1.5px solid #b0ccee;border-radius:8px;padding:12px 14px">
         <label style="color:#1a3a60">🔄 Harku i Kolonës — Shmangia Maks. f (cm)</label>
-        <input type="number" id="archOffset" value="0" min="0" max="150" step="1" style="margin-top:4px">
+        <input type="number" id="archOffset" value="100" min="0" max="200" step="1" style="margin-top:4px">
         <div class="hint" style="color:#3a5a80;margin-top:4px">
-          Shmangia horizontale maksimale e aksit të kolonës nga linja e drejtë (si kolona e lakuar/hark në fotot e klientit).
-          <strong>0 cm</strong> = kolona e drejtë. Çdo vlerë &gt; 0 shton moment shtesë: <strong>ΔM = N_Ed × f</strong>.
-          Tipikisht: 20–50 cm për kolona karporti të lakuara.
+          Distanca horizontale maksimale e boshit të kolonës nga linja e drejtë bazë→majë.
+          Për <strong>kolonat e lakuara të karportit (si në foto)</strong>, kjo është lakesa e madhe
+          gjysëm-rrethi: kolona fillon gati horizontalisht nga baza dhe drejtohet vertikalisht në majë.
+          <strong>Tipikisht 30–80 cm</strong> (H=3m → f≈40–60 cm). Shton moment shtesë: <strong>ΔM = N_Ed × f</strong>.
         </div>
       </div>
 
@@ -344,6 +346,12 @@ footer{text-align:center;padding:20px;font-size:.75rem;color:#9aaabb;border-top:
 </div>
 
 <button class="btn" onclick="calculate()">▶▶ LLOGARIT TË GJITHË PARAMETRAT</button>
+
+<!-- ===== STRUCTURE SKETCH ===== -->
+<div id="sketch-wrap" style="display:none;background:#fff;border:1px solid var(--br);border-radius:11px;margin-bottom:16px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.055)">
+  <div class="sec-title" style="padding:14px 20px 12px;margin-bottom:0;border-radius:11px 11px 0 0;border-bottom:1px solid var(--br)">📐 Skema Vizuale e Strukturës — Parametrat Aktualë</div>
+  <canvas id="structureCanvas" style="width:100%;display:block"></canvas>
+</div>
 
 <!-- ===== RESULTS ===== -->
 <div class="results" id="results">
@@ -502,7 +510,7 @@ function updateColPreview(){
   const Cc=parseFloat(document.getElementById('colSpacing').value)||2.5;
   const n=Math.max(2,Math.ceil(Ltot/Cc)+1);
   const cfg=document.getElementById('colConfig').value;
-  const rows=cfg==='leanTo'?1:2;
+  const rows=(cfg==='leanTo'||cfg==='cantilever')?1:2;
   document.getElementById('colCountPreview').value=`${n} sh/rresht × ${rows} rreshta = ${n*rows} gjithsej`;
 }
 document.getElementById('length').addEventListener('input',updateColPreview);
@@ -520,7 +528,11 @@ const SHS=[
   {b:160,t:6},{b:160,t:8},
   {b:180,t:6},{b:180,t:8},
   {b:200,t:6},{b:200,t:8},{b:200,t:10},
-  {b:250,t:8},{b:250,t:10},
+  {b:250,t:6},{b:250,t:8},{b:250,t:10},
+  {b:300,t:5},{b:300,t:6},{b:300,t:8},{b:300,t:10},
+  {b:350,t:5},{b:350,t:6},{b:350,t:8},{b:350,t:10},
+  {b:400,t:5},{b:400,t:6},{b:400,t:8},{b:400,t:10},{b:400,t:12},
+  {b:450,t:6},{b:450,t:8},{b:450,t:10},{b:450,t:12},
 ];
 
 function getSHS(b,t){
@@ -530,7 +542,7 @@ function getSHS(b,t){
   const Wel=2*I/b;                 // mm³
   const Wpl=b*t*(b-t)+2*t*Math.pow(b/2-t,2); // mm³
   const ival=Math.sqrt(I/A);       // mm
-  const G=A*7.85e-4;               // kg/m
+  const G=A*7.85e-3;               // kg/m  (A[mm²]×1000mm×7850kg/m³)
   return {b,t,bi,A,I,Wel,Wpl,i:ival,G,
     name:`SHS ${b}×${b}×${t}`};
 }
@@ -612,6 +624,324 @@ function selectAnchor(T_kN, V_kN, fub=500, gM2=1.25, n=4){
     if(eta<=1.0) return {...b,Ft,Fv,tPerBolt,vPerBolt,eta};
   }
   return {...BOLTS[BOLTS.length-1],Ft:0,Fv:0,tPerBolt:T_kN/2,vPerBolt:V_kN/n,eta:99};
+}
+
+// ── STRUCTURE SKETCH ─────────────────────────────────────────────────────────
+function drawSketch(res){
+  const cvs=document.getElementById('structureCanvas');
+  if(!cvs) return;
+  document.getElementById('sketch-wrap').style.display='block';
+  const Lg=parseFloat(document.getElementById('width').value)||8;
+  const Lt=parseFloat(document.getElementById('length').value)||5;
+  const H =parseFloat(document.getElementById('height').value)||3;
+  const Cc=parseFloat(document.getElementById('colSpacing').value)||2.5;
+  const aDeg=parseFloat(document.getElementById('slope').value)||1;
+  const archCm=parseFloat(document.getElementById('archOffset').value)||80;
+  const fA=archCm/100;
+  const Df=parseFloat(document.getElementById('footDepth').value)||0.8;
+  const colMethod=document.getElementById('colCountMethod').value;
+  const nCol=colMethod==='manual'
+    ?Math.max(1,parseInt(document.getElementById('colCountManual').value)||2)
+    :Math.max(2,Math.ceil(Lt/Cc)+1);
+  const t_mm=res.t_mm||5;
+  const B=res.B||0.6;
+  const secName=res.secName||'SHS';
+
+  const W_css=cvs.parentElement.clientWidth||840;
+  const CW=Math.max(700,W_css);
+  const CH=Math.round(CW*0.78);
+  const DPR=window.devicePixelRatio||1;
+  cvs.width=CW*DPR; cvs.height=CH*DPR;
+  cvs.style.width=CW+'px'; cvs.style.height=CH+'px';
+  const ctx=cvs.getContext('2d');
+  ctx.scale(DPR,DPR);
+
+  const C={
+    bg:'#ffffff', steel:'#1e2e3e', steelL:'#4a6a8a',
+    roof:'#1e2e3e', roofF:'rgba(30,46,62,0.11)',
+    gndLine:'#5a4a30', gndFill:'rgba(120,100,70,0.16)',
+    dim:'#c0392b', dimT:'#922b21',
+    arch:'#1a5276', lbl:'#1a2a3a',
+    conc:'rgba(170,155,130,0.75)', concS:'#8d7b6b',
+    anch:'#5d3a8a', it:'#7f8c8d'
+  };
+
+  ctx.fillStyle=C.bg; ctx.fillRect(0,0,CW,CH);
+  ctx.fillStyle=C.lbl; ctx.font='bold 13px Segoe UI,Arial,sans-serif';
+  ctx.textAlign='left'; ctx.textBaseline='top';
+  ctx.fillText('SKICA E PRODUKTIT (SIPAS PARAMETRAVE)',16,12);
+
+  function dimH(x1,x2,y,lbl){
+    ctx.save();
+    ctx.strokeStyle=C.dim; ctx.lineWidth=1; ctx.fillStyle=C.dimT;
+    ctx.beginPath();
+    ctx.moveTo(x1,y-6);ctx.lineTo(x1,y+6);ctx.moveTo(x2,y-6);ctx.lineTo(x2,y+6);
+    ctx.moveTo(x1,y);ctx.lineTo(x2,y); ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(x1,y);ctx.lineTo(x1+8,y-3);ctx.moveTo(x1,y);ctx.lineTo(x1+8,y+3);
+    ctx.moveTo(x2,y);ctx.lineTo(x2-8,y-3);ctx.moveTo(x2,y);ctx.lineTo(x2-8,y+3);
+    ctx.stroke();
+    ctx.font='11px Segoe UI,Arial,sans-serif';
+    ctx.textAlign='center'; ctx.textBaseline='bottom';
+    ctx.fillText(lbl,(x1+x2)/2,y-8); ctx.restore();
+  }
+
+  function dimV(x,y1,y2,lbl){
+    ctx.save();
+    ctx.strokeStyle=C.dim; ctx.lineWidth=1; ctx.fillStyle=C.dimT;
+    ctx.beginPath();
+    ctx.moveTo(x-6,y1);ctx.lineTo(x+6,y1);ctx.moveTo(x-6,y2);ctx.lineTo(x+6,y2);
+    ctx.moveTo(x,y1);ctx.lineTo(x,y2); ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(x,y1);ctx.lineTo(x-3,y1+8);ctx.moveTo(x,y1);ctx.lineTo(x+3,y1+8);
+    ctx.moveTo(x,y2);ctx.lineTo(x-3,y2-8);ctx.moveTo(x,y2);ctx.lineTo(x+3,y2-8);
+    ctx.stroke();
+    ctx.save(); ctx.translate(x,(y1+y2)/2); ctx.rotate(-Math.PI/2);
+    ctx.font='11px Segoe UI,Arial,sans-serif';
+    ctx.textAlign='center'; ctx.textBaseline='bottom';
+    ctx.fillText(lbl,0,-8); ctx.restore(); ctx.restore();
+  }
+
+  function gnd(x1,x2,y){
+    ctx.save();
+    ctx.fillStyle=C.gndFill; ctx.fillRect(x1,y,x2-x1,13);
+    ctx.strokeStyle=C.gndLine; ctx.lineWidth=1.5;
+    ctx.beginPath();ctx.moveTo(x1,y);ctx.lineTo(x2,y);ctx.stroke();
+    ctx.strokeStyle='rgba(80,60,30,0.4)'; ctx.lineWidth=1;
+    for(let gx=x1+4;gx<x2;gx+=12){
+      ctx.beginPath();ctx.moveTo(gx,y);ctx.lineTo(gx-9,y+10);ctx.stroke();
+    }
+    ctx.restore();
+  }
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // Shared helper — draws ONE curved, tapered steel leg (flared foot + slot
+  // holes), exactly the organic shape of the real product. baseX==topX → straight.
+  // ══════════════════════════════════════════════════════════════════════════
+  function steelLeg(baseX, topX, topY, gY, sc, nSlots){
+    const cH=gY-topY;
+    const P0=[baseX,gY], P1=[baseX,gY-cH*0.50],
+          P2=[topX-(topX-baseX)*0.25, topY+cH*0.18], P3=[topX,topY];
+    const hw0=0.155*sc, hw1=0.095*sc;            // half-width: wider at base
+    const B =s=>{const u=1-s;return [u*u*u*P0[0]+3*u*u*s*P1[0]+3*u*s*s*P2[0]+s*s*s*P3[0],
+                                     u*u*u*P0[1]+3*u*u*s*P1[1]+3*u*s*s*P2[1]+s*s*s*P3[1]];};
+    const dB=s=>{const u=1-s;return [3*u*u*(P1[0]-P0[0])+6*u*s*(P2[0]-P1[0])+3*s*s*(P3[0]-P2[0]),
+                                     3*u*u*(P1[1]-P0[1])+6*u*s*(P2[1]-P1[1])+3*s*s*(P3[1]-P2[1])];};
+    const hw=s=>hw0+(hw1-hw0)*s;
+    const N=28, L=[], R=[];
+    for(let i=0;i<=N;i++){const s=i/N,p=B(s),d=dB(s);
+      const ln=Math.hypot(d[0],d[1])||1, nx=-d[1]/ln, ny=d[0]/ln;
+      L.push([p[0]+nx*hw(s),p[1]+ny*hw(s)]); R.push([p[0]-nx*hw(s),p[1]-ny*hw(s)]);}
+    const footHW=0.26*sc, footH=cH*0.09;
+    // body
+    ctx.save();
+    const grd=ctx.createLinearGradient(baseX-hw0,0,baseX+hw0,0);
+    grd.addColorStop(0,'#22323f'); grd.addColorStop(.45,'#41576a'); grd.addColorStop(1,'#1a2835');
+    ctx.beginPath(); ctx.moveTo(L[0][0],L[0][1]);
+    for(let i=1;i<=N;i++) ctx.lineTo(L[i][0],L[i][1]);
+    for(let i=N;i>=0;i--) ctx.lineTo(R[i][0],R[i][1]);
+    ctx.closePath();
+    ctx.shadowColor='rgba(0,0,0,0.20)'; ctx.shadowBlur=7; ctx.shadowOffsetX=2;
+    ctx.fillStyle=grd; ctx.fill();
+    ctx.shadowColor='transparent'; ctx.shadowBlur=0; ctx.shadowOffsetX=0;
+    ctx.strokeStyle=C.steel; ctx.lineWidth=1.4; ctx.stroke();
+    ctx.restore();
+    // flared foot
+    ctx.save();
+    ctx.beginPath();
+    ctx.moveTo(baseX-hw0,gY-footH); ctx.lineTo(baseX-footHW,gY);
+    ctx.lineTo(baseX+footHW,gY); ctx.lineTo(baseX+hw0,gY-footH); ctx.closePath();
+    ctx.fillStyle='#27384a'; ctx.fill();
+    ctx.strokeStyle=C.steel; ctx.lineWidth=1.4; ctx.stroke();
+    ctx.fillStyle=C.steel; ctx.fillRect(baseX-footHW-2,gY-2,2*footHW+4,4);
+    ctx.restore();
+    // slot holes (lightening cut-outs)
+    for(let k=0;k<nSlots;k++){
+      const s=0.20+0.60*(nSlots>1?k/(nSlots-1):0.5);
+      const p=B(s),d=dB(s),ang=Math.atan2(d[1],d[0]);
+      const sl=hw(s)*1.35, sW=hw(s)*0.4;
+      ctx.save(); ctx.translate(p[0],p[1]); ctx.rotate(ang);
+      ctx.beginPath();
+      if(ctx.roundRect) ctx.roundRect(-sl/2,-sW/2,sl,sW,sW/2); else ctx.rect(-sl/2,-sW/2,sl,sW);
+      ctx.fillStyle='#e3ebf3'; ctx.fill();
+      ctx.strokeStyle='rgba(18,28,42,0.55)'; ctx.lineWidth=1; ctx.stroke();
+      ctx.restore();
+    }
+  }
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // PANEL 1 — PAMJA ANËSORE  (top 60%) — single-row cantilever, as in the render
+  // ══════════════════════════════════════════════════════════════════════════
+  const aRad=aDeg*Math.PI/180, tanA=Math.tan(aRad);
+  const P1t=34, P1b=Math.round(CH*0.60);
+  const P1ml=72, P1mr=104, P1mt=46, P1mb=64;
+  const rRiseM=tanA*Lg, trussM=0.55;
+  const sc1=Math.min(
+    (CW-P1ml-P1mr)/Lg,
+    (P1b-P1t-P1mt-P1mb)/(H+rRiseM+trussM+0.3)
+  );
+
+  const gY1   = P1b-P1mb;
+  const roofL = P1ml, roofR=roofL+Lg*sc1;
+  const frLeg = 0.18;                            // leg connects 18% from the low (front) end
+  const topX  = roofL+frLeg*Lg*sc1;              // leg → roof connection
+  const topY  = gY1-H*sc1;                        // connection height = H
+  const baseX = topX-fA*sc1;                      // base is to the front (left) of the top
+  const bottomY=x=>topY-(x-topX)*tanA;            // roof tilts UP to the right
+  const trussPx=trussM*sc1;
+  const fpH1=Df*sc1, fpW1=Math.max(B*sc1,34);
+
+  // ── Roof truss (tilted up to the cantilever side) ──
+  const nP=Math.max(4,Math.round(Lg/1.05));
+  const node=(k,top)=>{const x=roofL+k*(roofR-roofL)/nP; return [x, bottomY(x)-(top?trussPx:0)];};
+  // deck strip on the top chord
+  ctx.save();
+  ctx.strokeStyle=C.roof; ctx.lineWidth=Math.max(7,t_mm*1.7); ctx.lineCap='round';
+  ctx.beginPath(); ctx.moveTo(...node(0,true)); ctx.lineTo(...node(nP,true)); ctx.stroke();
+  ctx.strokeStyle=C.steelL; ctx.lineWidth=2;
+  ctx.beginPath(); ctx.moveTo(...node(0,true)); ctx.lineTo(...node(nP,true)); ctx.stroke();
+  // web members
+  ctx.strokeStyle='#3a4f63'; ctx.lineWidth=2;
+  for(let k=0;k<nP;k++){
+    ctx.beginPath(); ctx.moveTo(...node(k,false)); ctx.lineTo(...node(k,true)); ctx.stroke();   // vertical
+    ctx.beginPath(); ctx.moveTo(...node(k,false)); ctx.lineTo(...node(k+1,true)); ctx.stroke(); // diagonal
+  }
+  ctx.beginPath(); ctx.moveTo(...node(nP,false)); ctx.lineTo(...node(nP,true)); ctx.stroke();
+  // bottom chord (main curved beam) — drawn thick & rounded
+  ctx.strokeStyle=C.steel; ctx.lineWidth=Math.max(6,t_mm*1.4); ctx.lineCap='round';
+  ctx.beginPath(); ctx.moveTo(...node(0,false)); ctx.lineTo(...node(nP,false)); ctx.stroke();
+  ctx.restore();
+
+  // ── Ground ──
+  gnd(roofL-46, roofR+30, gY1);
+
+  // ── Footing under the leg ──
+  ctx.fillStyle=C.conc; ctx.strokeStyle=C.concS; ctx.lineWidth=1.5;
+  ctx.fillRect(baseX-fpW1/2,gY1,fpW1,fpH1); ctx.strokeRect(baseX-fpW1/2,gY1,fpW1,fpH1);
+  ctx.save(); ctx.beginPath(); ctx.rect(baseX-fpW1/2,gY1,fpW1,fpH1); ctx.clip();
+  ctx.strokeStyle='rgba(100,80,60,0.22)'; ctx.lineWidth=0.8;
+  for(let d=0;d<fpW1+fpH1;d+=7){ctx.beginPath();ctx.moveTo(baseX-fpW1/2+d,gY1);ctx.lineTo(baseX-fpW1/2,gY1+d);ctx.stroke();}
+  ctx.restore();
+
+  // ── The curved tapered leg ──
+  steelLeg(baseX, topX, topY, gY1, sc1, 6);
+
+  // ── "barku" (bow) annotation ──
+  if(fA>0){
+    const bowY=topY+(gY1-topY)*0.12;
+    ctx.save();
+    ctx.strokeStyle=C.arch; ctx.lineWidth=1.1; ctx.setLineDash([4,3]);
+    ctx.beginPath();ctx.moveTo(topX,topY);ctx.lineTo(topX,gY1+6);ctx.stroke();
+    ctx.beginPath();ctx.moveTo(baseX,gY1+6);ctx.lineTo(baseX,bowY);ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.beginPath();ctx.moveTo(topX,bowY);ctx.lineTo(baseX,bowY);ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(baseX,bowY);ctx.lineTo(baseX+7,bowY-3);ctx.moveTo(baseX,bowY);ctx.lineTo(baseX+7,bowY+3);
+    ctx.moveTo(topX,bowY);ctx.lineTo(topX-7,bowY-3);ctx.moveTo(topX,bowY);ctx.lineTo(topX-7,bowY+3);
+    ctx.stroke();
+    ctx.fillStyle=C.arch; ctx.font='11px Segoe UI,Arial,sans-serif';
+    ctx.textAlign='center'; ctx.textBaseline='bottom';
+    ctx.fillText(`barku ${fA.toFixed(2)} m`,(topX+baseX)/2,bowY-3);
+    ctx.restore();
+  }
+
+  // ── α tilt arc at the front (low) end ──
+  if(aDeg>0.3){
+    const fl=node(0,false);
+    ctx.save();
+    ctx.strokeStyle='#7d3c98'; ctx.lineWidth=1.4;
+    ctx.beginPath();ctx.arc(fl[0],fl[1],32,-aRad,0);ctx.stroke();
+    ctx.beginPath();ctx.moveTo(fl[0],fl[1]);ctx.lineTo(fl[0]+46,fl[1]);ctx.stroke();
+    ctx.fillStyle='#7d3c98'; ctx.font='11px Segoe UI,Arial,sans-serif';
+    ctx.textAlign='left'; ctx.textBaseline='bottom';
+    ctx.fillText(`α = ${aDeg}°`,fl[0]+20,fl[1]-8);
+    ctx.restore();
+  }
+
+  // ── Section tag + δ ──
+  ctx.save();
+  ctx.font='bold 9px Segoe UI,Arial,sans-serif';
+  const sw=ctx.measureText(secName).width+10;
+  const stagX=baseX+0.30*sc1+sw/2, stagY=topY+(gY1-topY)*0.58;
+  ctx.fillStyle='rgba(224,236,255,0.96)'; ctx.strokeStyle=C.steel; ctx.lineWidth=1;
+  ctx.beginPath();
+  if(ctx.roundRect) ctx.roundRect(stagX-sw/2,stagY-9,sw,18,3); else ctx.rect(stagX-sw/2,stagY-9,sw,18);
+  ctx.fill(); ctx.stroke();
+  ctx.fillStyle=C.steel; ctx.textAlign='center'; ctx.textBaseline='middle';
+  ctx.fillText(secName,stagX,stagY); ctx.restore();
+
+  // ── Dimensions ──
+  dimV(roofR+54, topY, gY1, `H = ${H.toFixed(2)} m`);
+  ctx.save();
+  ctx.fillStyle=C.dimT; ctx.font='11px Segoe UI,Arial,sans-serif';
+  ctx.textAlign='left'; ctx.textBaseline='top';
+  ctx.fillText(`δ = ${t_mm} mm`, roofR+62, (topY+gY1)/2+6);
+  ctx.restore();
+  dimH(roofL, roofR, gY1+fpH1+24, `gjerësia = ${Lg.toFixed(1)} m`);
+
+  ctx.save();
+  ctx.fillStyle=C.it; ctx.font='italic 11px Segoe UI,Arial,sans-serif';
+  ctx.textAlign='right'; ctx.textBaseline='bottom';
+  ctx.fillText('pamja anësore', CW-14, P1b-4);
+  ctx.restore();
+
+  // Divider
+  ctx.strokeStyle='#d5dfe9'; ctx.lineWidth=1.2; ctx.setLineDash([]);
+  ctx.beginPath();ctx.moveTo(16,P1b+5);ctx.lineTo(CW-16,P1b+5);ctx.stroke();
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // PANEL 2 — PAMJA BALLORE  (bottom 38% of canvas)
+  // Front view: nCol straight columns, roof beam, ground
+  // ══════════════════════════════════════════════════════════════════════════
+  const P2t=P1b+14, P2b=CH-12;
+  const P2ml=70, P2mr=50, P2mt=16, P2mb=44;
+  const P2h=P2b-P2t;
+
+  const sc2=Math.min(
+    (CW-P2ml-P2mr)/Lt,
+    (P2h-P2mt-P2mb)/(H+Df+0.1)
+  );
+  const gY2=P2b-P2mb;
+  const rY2=gY2-H*sc2;
+  const stX2=P2ml, endX2=stX2+Lt*sc2;
+  const fpH2=Df*sc2, fpW2=Math.max(B*sc2,24);
+  const rbH2=Math.max(7,t_mm*1.6);
+
+  // Roof beam (seen end-on as a horizontal band)
+  ctx.fillStyle=C.roofF;
+  ctx.fillRect(stX2,rY2-rbH2,Lt*sc2,rbH2);
+  ctx.strokeStyle=C.roof; ctx.lineWidth=2.5; ctx.strokeRect(stX2,rY2-rbH2,Lt*sc2,rbH2);
+  ctx.strokeStyle=C.steelL; ctx.lineWidth=1.5;
+  ctx.beginPath();ctx.moveTo(stX2,rY2-rbH2+1.5);ctx.lineTo(endX2,rY2-rbH2+1.5);ctx.stroke();
+
+  // Footings (drawn first, behind feet)
+  for(let i=0;i<nCol;i++){
+    const cx2=stX2+(nCol>1?Lt*sc2*i/(nCol-1):Lt*sc2/2);
+    ctx.fillStyle=C.conc; ctx.strokeStyle=C.concS; ctx.lineWidth=1.5;
+    ctx.fillRect(cx2-fpW2/2,gY2,fpW2,fpH2); ctx.strokeRect(cx2-fpW2/2,gY2,fpW2,fpH2);
+  }
+
+  // Ground
+  gnd(stX2-30, endX2+30, gY2);
+
+  // Legs (curve is edge-on → near-vertical tapered posts with feet + slots)
+  for(let i=0;i<nCol;i++){
+    const cx2=stX2+(nCol>1?Lt*sc2*i/(nCol-1):Lt*sc2/2);
+    steelLeg(cx2, cx2, rY2, gY2, sc2, 3);
+  }
+
+  // Label
+  ctx.save();
+  ctx.fillStyle=C.dimT; ctx.font='11px Segoe UI,Arial,sans-serif';
+  ctx.textAlign='center'; ctx.textBaseline='top';
+  ctx.fillText(`gjatësia = ${Lt.toFixed(1)} m · ${nCol} shtylla`,(stX2+endX2)/2,gY2+fpH2+8);
+  ctx.restore();
+
+  ctx.save();
+  ctx.fillStyle=C.it; ctx.font='italic 11px Segoe UI,Arial,sans-serif';
+  ctx.textAlign='right'; ctx.textBaseline='bottom';
+  ctx.fillText('pamja ballore', CW-14, P2b);
+  ctx.restore();
 }
 
 // ── MAIN ─────────────────────────────────────────────────────────────────────
@@ -728,15 +1058,18 @@ function calculate(){
   const uStress=sigAct/fd_s*100;
 
   // ── 3. Column layout ──
-  const nRows=colCfg==='leanTo'?1:2;
+  const cantilever = colCfg==='cantilever';
+  const nRows=(colCfg==='leanTo'||cantilever)?1:2;
   const nPerRow=colMethod==='manual'
     ? Math.max(1,parseInt(document.getElementById('colCountManual').value)||2)
     : Math.max(2,Math.ceil(Ltot/Cc)+1);
   const nCols=nRows*nPerRow;
   // Update live preview
   document.getElementById('colCountPreview').value=`${nPerRow} sh/rresht × ${nRows} rreshta = ${nCols} gjithsej`;
-  // Tributary area per column
-  const A_trib=Cc*(W/2); // m² — half width per column (other half to wall or opposite column)
+  // Tributary area per column:
+  //  • cantilever  → ONE row of legs carries the FULL roof width (W)
+  //  • lean-to/free → each row carries half the width (W/2)
+  const A_trib=Cc*(cantilever?W:W/2); // m²
 
   // ── 4. Column loads ──
   // Vertical — gravity combo
@@ -754,21 +1087,35 @@ function calculate(){
   const H_k =qp*H*Cc;       // kN char (wind on facade area per column)
   const H_Ed=gQ*H_k;        // kN ULS
 
-  // Moment at column base from wind (conservative cantilever)
-  const M_wind=H_Ed*H*Math.min(muEff,2.0)/2; // kNm
+  // Buckling length factor: a free-standing cantilever leg (top free to sway) is μ=2.0.
+  // Lean-to / freestanding portals use the user's μ.
+  const muBuck = cantilever ? 2.0 : muEff;
+
+  // Moment at column base from wind.
+  //  • cantilever: pure UDL geometry → M = H_Ed × H/2  (resultant at mid-height)
+  //  • portal: μ used as a base-fixity proxy
+  const M_wind = cantilever ? H_Ed*H/2 : H_Ed*H*Math.min(muEff,2.0)/2; // kNm
 
   // Additional moment from arch bow: ΔM = N_Ed × f  (first-order eccentricity)
   const M_arch=N_Ed*f_arch; // kNm
+
+  // CANTILEVER gravity overturning moment — the dominant action for this product.
+  // A single row of legs near the front edge carries the whole roof; the resultant
+  // of the roof load sits at the roof centroid (≈ W/2), giving lever arm e about the
+  // leg base.  M_grav = N_Ed × e.   (leg sits a≈0.18·W from the front/low edge)
+  const a_leg  = cantilever ? 0.18*W : 0;          // leg offset from front edge [m]
+  const e_cant = cantilever ? Math.max(0, W/2 - a_leg) : 0; // lever arm to roof centroid [m]
+  const M_grav = N_Ed*e_cant;                       // kNm
 
   // Arc length of curved column (parabolic bow): L_arc ≈ H × √(1 + (8f/3H)²)
   const L_arc = f_arch>0
     ? H*Math.sqrt(1+Math.pow(8*f_arch/(3*H),2))
     : H;
 
-  const M_Ed=M_wind+M_arch; // total base moment [kNm]
+  const M_Ed=M_wind+M_arch+M_grav; // total base moment [kNm]
 
   // ── 5. Column section check ──
-  const Lcr_mm=muEff*L_arc*1000; // uses arc length for curved columns
+  const Lcr_mm=muBuck*L_arc*1000; // effective length: μ × arc length of the curved leg
   const N_Ed_N=N_Ed*1000;       // N
   const M_Ed_Nmm=M_Ed*1e6;     // N·mm
 
@@ -800,8 +1147,8 @@ function calculate(){
   const bolt=selectAnchor(Math.max(T_bolt,5),H_Ed);
 
   // ── 7. Weights ──
-  const colWeight=bestSec.G*H*nCols; // kg all columns
-  const sheetWeight=(RHO*t_comm/1000*1000)*Ltot*W; // kN → kg
+  const colWeight=bestSec.G*L_arc*nCols; // kg all columns (arc length of curved leg)
+  const sheetWeight=RHO*(t_comm/1000)*Ltot*W; // kN  (γ·t·area)
   const concrVol=foot.B*foot.B*foot.Df*nCols; // m³
 
   // ===== UPDATE UI =====
@@ -869,10 +1216,10 @@ ULS Kombo 2:    Ed = 1.0×${f(g_k,3)} – 1.5×${f(wUp,3)} = –${f(q_uls2,3)} k
 
   // Column info
   document.getElementById('col-layout-info').innerHTML=`
-    <strong>Konfigurimi:</strong> ${colCfg==='leanTo'?'Lean-to (anë e murit + kolona të lira)':'Freestanding (të dyja anët me kolona)'}<br>
+    <strong>Konfigurimi:</strong> ${cantilever?'Konzolë — një rresht shtyllash që mban të gjithë çatinë (kantilever, si fotot)':colCfg==='leanTo'?'Lean-to (anë e murit + kolona të lira)':'Freestanding (të dyja anët me kolona)'}<br>
     <strong>Hapi i shtyllave:</strong> ${Cc} m &nbsp;|&nbsp;
-    <strong>Numri total:</strong> ${nRows} rreshta × ${nPerRow} shtylla = <strong>${nCols} shtylla</strong><br>
-    <strong>Sipërfaqja tributare për kolonë:</strong> ${Cc} m × ${f(W/2,2)} m = ${f(A_trib,2)} m²`;
+    <strong>Numri total:</strong> ${nRows} rresht${nRows>1?'a':''} × ${nPerRow} shtylla = <strong>${nCols} shtylla</strong><br>
+    <strong>Sipërfaqja tributare për kolonë:</strong> ${Cc} m × ${f(cantilever?W:W/2,2)} m = ${f(A_trib,2)} m²${cantilever?` (gjerësia e plotë — konzolë)`:''}`;
 
   document.getElementById('r-ned').textContent=f(N_Ed,1);
   document.getElementById('r-med').textContent=f(M_Ed,1);
@@ -921,17 +1268,21 @@ N_uplift = 1.50×${f(wUp,3)}×${f(A_trib,2)} − 1.0×${f(N_G,2)} = ${f(N_uplift
     <div class="formula">H_k  = q_p × H × C_c = ${f(qp,3)} × ${H} × ${Cc} = ${f(H_k,2)} kN
 H_Ed = γQ × H_k = 1.50 × ${f(H_k,2)} = ${f(H_Ed,2)} kN
 
-Moment nga era  (μ=${muEff}):
-M_erë = H_Ed × H × μ/2 = ${f(H_Ed,2)} × ${H} × ${f(muEff,1)}/2 = ${f(M_wind,2)} kNm
+Moment nga era${cantilever?' (konzolë, UDL → krahu H/2)':` (μ=${muEff})`}:
+M_erë = ${cantilever?`H_Ed × H/2 = ${f(H_Ed,2)} × ${H}/2`:`H_Ed × H × μ/2 = ${f(H_Ed,2)} × ${H} × ${f(muEff,1)}/2`} = ${f(M_wind,2)} kNm
 
 ${f_arch>0?`Harku i kolonës (f = ${archCm} cm = ${f(f_arch,3)} m):
 Gjatësia e harkut  L_arc = H × √(1+(8f/3H)²) = ${H}×√(1+(${f(8*f_arch/(3*H),4)})²) = ${f(L_arc,3)} m
 Moment shtesë hark ΔM = N_Ed × f = ${f(N_Ed,2)} × ${f(f_arch,3)} = ${f(M_arch,2)} kNm
-`:'Harku: 0 cm → kolona e drejtë, ΔM = 0 kNm\n'}
+`:'Harku: 0 cm → kolona e drejtë, ΔM = 0 kNm\n'}${cantilever?`
+KONZOLA (kantilever) — momenti dominues nga graviteti:
+Krahu i çatisë (qendra e ngarkesës nga boshti i këmbës): e = W/2 − a = ${f(W/2,2)} − ${f(a_leg,2)} = ${f(e_cant,2)} m
+M_konzolë = N_Ed × e = ${f(N_Ed,2)} × ${f(e_cant,2)} = ${f(M_grav,2)} kNm
+`:''}
 TOTAL moment bazë:
-M_Ed = M_erë + ΔM_hark = ${f(M_wind,2)} + ${f(M_arch,2)} = ${f(M_Ed,2)} kNm</div>
+M_Ed = M_erë + ΔM_hark${cantilever?' + M_konzolë':''} = ${f(M_wind,2)} + ${f(M_arch,2)}${cantilever?` + ${f(M_grav,2)}`:''} = ${f(M_Ed,2)} kNm</div>
     <p>Kontrolli i flamburimit (EN 1993-1-1) — ${bestSec.name}:</p>
-    <div class="formula">Gjatësia efektive: L_cr = μ × L_arc = ${muEff} × ${f(L_arc*1000,0)} = ${f(Lcr_mm,0)} mm
+    <div class="formula">Gjatësia efektive: L_cr = μ × L_arc = ${f(muBuck,1)}${cantilever?' (konzolë)':''} × ${f(L_arc*1000,0)} = ${f(Lcr_mm,0)} mm
 Rreze inerciale: i = ${f(bestSec.i,1)} mm
 λ̄ = (L_cr/i) / (π×√(E/fy)) = (${f(Lcr_mm,0)}/${f(bestSec.i,1)}) / (π×√(${E}/${fy_c}))
    = ${f(Lcr_mm/bestSec.i,2)} / ${f(Math.PI*Math.sqrt(E/fy_c),2)} = ${f(bestRes.lamBar,3)}
@@ -1063,13 +1414,17 @@ Shfrytëzimi: η = T_per_bolt/F_t + V_per_bolt/(1.4×F_v) = ${f(bolt.eta,3)} ${b
   if(Cc>3.0) warns.push(`⚠️ Hapi i shtyllave ${Cc}m është i madh — verifikoni trarin kryesor (nuk llogaritet këtu).`);
   if(!foot.midOK) warns.push(`❌ Ekscentriciteti tejkalon 1/3 e themeleve (e=${f(foot.e,3)}m > B/6=${f(foot.B/6,3)}m) — rrit B ose shto kundërmomentin.`);
   if(!foot.slidOK) warns.push(`❌ Kontrolli i rrëshqitjes dështon (H=${f(H_Ed,1)}kN > 0.4N=${f(foot.Hfrict,1)}kN) — shto kokë betoni (buze) ose rrit themel.`);
-  if(muEff>=2.0) warns.push(`ℹ️ μ=2.0 (konzolë) është rasti i keq — nëse trari kryesor lidhet mirë, μ=1.0 ose 0.7 është më real.`);
+  if(cantilever) warns.push(`ℹ️ Konzolë: gjatësia efektive e flamburimit μ=2.0 është e detyrueshme (maja e këmbës lëviz lirshëm). Momenti bazë dominohet nga graviteti i çatisë konzolë.`);
+  else if(muEff>=2.0) warns.push(`ℹ️ μ=2.0 (konzolë) është rasti i keq — nëse trari kryesor lidhet mirë, μ=1.0 ose 0.7 është më real.`);
   if(Lp>1.5) warns.push(`⚠️ Hap purlinësh ${Lp}m — konsideroni reduktim për llamarinë më ekonomike.`);
 
   const wDiv=document.getElementById('main-warnings');
   wDiv.innerHTML=warns.length
     ?`<div class="warn-box"><strong>⚠️ Paralajmërime:</strong><ul>${warns.map(w=>`<li>${w}</li>`).join('')}</ul></div>`
     :`<div class="info-box">✅ Asnjë paralajmërim — struktura është brenda parametrave normale.</div>`;
+
+  // Draw structural sketch
+  drawSketch({t_mm: t_comm, B: foot.B, secName: bestSec.name});
 
   const el=document.getElementById('results');
   el.classList.add('on');
